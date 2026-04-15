@@ -1,0 +1,59 @@
+# Reusable workflow: Verify all PR commits carry a Signed-off-by line.
+#
+# Usage from any org repository:
+#
+#   jobs:
+#     signed:
+#       uses: keylime-webtool/.github/.github/workflows/signed-commits.yml@main
+#
+# No inputs required — the workflow auto-detects the base branch.
+
+name: Signed commits
+
+on:
+  workflow_call:
+
+jobs:
+  check-signed:
+    name: Check Signed-off-by
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify all PR commits are signed-off
+        run: |
+          BASE_REF="origin/${{ github.base_ref }}"
+
+          failed=0
+          total=0
+
+          for sha in $(git rev-list --no-merges "$BASE_REF"..HEAD); do
+            total=$((total + 1))
+            short=$(git log -1 --format='%h %s' "$sha" | head -c 72)
+            body=$(git log -1 --format='%B' "$sha")
+
+            if echo "$body" | grep -qP '^Signed-off-by: .+ <.+>'; then
+              echo "  $short  OK"
+            else
+              echo "  $short  MISSING Signed-off-by"
+              failed=$((failed + 1))
+            fi
+          done
+
+          echo ""
+          if [ "$total" -eq 0 ]; then
+            echo "No new commits to check."
+            exit 0
+          fi
+
+          if [ "$failed" -gt 0 ]; then
+            echo "$failed of $total commit(s) missing Signed-off-by."
+            echo ""
+            echo "Add it with:  git commit --amend -s"
+            echo "Or for all:   git rebase --signoff $BASE_REF"
+            exit 1
+          fi
+
+          echo "All $total commit(s) signed."
