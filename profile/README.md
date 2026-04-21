@@ -22,22 +22,22 @@ A web-based security operations platform for centralized monitoring, management,
                         TLS 1.3   |   WebSocket
                        (HTTPS)    |   (wss://)
                                   |
-                         +--------v----------+
-                         |   Rust Backend    |
-                         |   Axum + Tokio    |
-                         |   JWT / RBAC      |
-                         +--+-----+------+--+
-                            |     |      |
-               mTLS (rustls)|     |      | mTLS (rustls)
-                            |     |      |
-                   +--------v-+ +-v----+ +v-----------+
-                   | Keylime  | |TimescaleDB| | Redis  |
-                   | Verifier | |(time-series)| |(cache) |
-                   | (v2/v3)  | |           | |        |
-                   +----------+ +-----------+ +--------+
-                   | Keylime  |
-                   | Registrar|
-                   +----------+
+                     +------------v--------------+
+                     |       Rust Backend        |
+                     |       Axum + Tokio        |
+                     |       JWT / RBAC          |
+                     +--+----------+----------+--+
+                        |          |          |
+           mTLS (rustls)|          |          | mTLS (rustls)
+                        |          |          |
+               +--------v-+ +------v------+ +-v-------+
+               | Keylime  | | TimescaleDB | | Redis   |
+               | Verifier | |(time-series)| | (cache) |
+               | (v2/v3)  | |             | |         |
+               +----------+ +-------------+ +---------+
+               | Keylime  |
+               | Registrar|
+               +----------+
 ```
 
 The backend consumes Keylime's existing Verifier and Registrar REST APIs (v2 pull-mode and v3 push-mode) via mTLS **without requiring any modification to Keylime components**. It acts as a read-through cache and analytics aggregator, presenting a unified REST + WebSocket API to the frontend SPA.
