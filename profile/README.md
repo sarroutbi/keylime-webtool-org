@@ -80,7 +80,7 @@ Rust async backend built on Axum and Tokio, serving the REST API and WebSocket e
 |---|---|
 | **Stack** | Rust 2021 edition, Axum, Tokio, sqlx (TimescaleDB), redis, reqwest + rustls, jsonwebtoken, openidconnect |
 | **Observability** | tracing + tracing-subscriber, OpenTelemetry, Prometheus metrics |
-| **Testing** | Mockoon integration tests simulating Keylime Verifier/Registrar |
+| **Testing** | `cargo test` unit tests, Mockoon integration tests simulating Keylime Verifier/Registrar, curl end-to-end tests |
 | **License** | Apache-2.0 |
 
 **64 API endpoints** across 11 handler modules:
@@ -145,7 +145,7 @@ Organization-level profile and governance documentation.
 | TLS | rustls + tokio-rustls | TLS 1.3 browser-facing, mTLS to Keylime APIs |
 | Auth | OIDC/SAML + JWT | 15-min token expiry, refresh rotation, server-side revocation |
 | Docs | Beamer/LaTeX | Presentation slides with Red Hat theme |
-| CI | GitHub Actions | Build validation, markdown linting, Fedora container matrix |
+| CI | GitHub Actions | Unit tests, Mockoon + curl integration, clippy, cargo-audit, shellcheck, npm audit |
 
 ## Security Model
 
@@ -234,15 +234,21 @@ The frontend dev server proxies `/api/*` and `/ws` requests to the backend at `l
 ### Running Tests
 
 ```bash
+# Backend
+cd keylime-webtool-backend
+cargo test                         # unit tests
+cargo clippy -- -D warnings        # lint (treat warnings as errors)
+cargo fmt -- --check               # format check
+bash tests/mockoon_tests.sh        # Mockoon integration tests (auto setup/teardown)
+bash tests/curl_integration_test.sh # curl end-to-end tests against all API endpoints
+bash scripts/pre-commit.sh         # run all CI checks locally
+
 # Frontend
 cd keylime-webtool-frontend
-npm run test          # watch mode
-npm run test -- --run # single run
-npm run lint          # ESLint
-
-# Backend (with Mockoon mocks)
-cd keylime-webtool-backend
-bash tests/mockoon_tests.sh
+npm run test          # Vitest watch mode
+npm run test -- --run # single test run
+npm run lint          # ESLint (zero warnings policy)
+npx tsc -b            # type check
 
 # Documentation (build presentations)
 cd keylime-webtool-doc
