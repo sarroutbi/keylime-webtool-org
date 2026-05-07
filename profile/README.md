@@ -12,30 +12,27 @@ A web-based security operations platform for centralized monitoring, management,
 ## Architecture
 
 ```
-                         +-------------------+
-                         |    Browser (SPA)  |
-                         |  React 18 + TS    |
-                         |  Vite, Zustand,   |
-                         |  TanStack Query   |
-                         +--------+----------+
-                                  |
-                         TLS 1.3  |  WebSocket
-                         (HTTPS)  |  (wss://)
-                                  |
-                     +------------v--------------+               +----------+
-                     |       Rust Backend        | mTLS (rustls) | Keylime  |
-                     |       Axum + Tokio        |---------------> Registrar|
-                     |       JWT / RBAC          |               |   (v2)   |
-                     +--+----------+----------+--+               +----------+
-                        |          |          |
-                        |          |          |
-          mTLS (rustls) |          |          | mTLS (rustls)
-                        |          |          |
-               +--------v-+ +------v------+ +-v-------+
-               | Keylime  | | TimescaleDB | | Redis   |
-               | Verifier | |(time-series)| | (cache) |
-               | (v2/v3)  | |             | |         |
-               +----------+ +-------------+ +---------+
+                              +-------------------+
+                              |   Browser (SPA)   |
+                              |   React 18 + TS   |
+                              |   Vite, Zustand,  |
+                              |   TanStack Query  |
+                              +--------+----------+
+                                       |
+                              TLS 1.3  |  WebSocket
+                              (HTTPS)  |  (wss://)
+                                       |
+  +----------+           +-------------v--------------+          +-----------+
+  | Keylime  |           |        Rust Backend        |          |  Keylime  |
+  | Verifier <-----------|        Axum + Tokio        |----------> Registrar |
+  | (v2/v3)  |   mTLS    |        JWT / RBAC          |   mTLS   |   (v2)    |
+  +----------+ (rustls)  +-----+----------------+-----+ (rustls) +-----------+
+                               |                |
+                               |                |
+                        +------v------+    +----v----+
+                        | TimescaleDB |    |  Redis  |
+                        |(time-series)|    | (cache) |
+                        +-------------+    +---------+
 ```
 
 The backend consumes Keylime's existing Verifier and Registrar REST APIs (v2 pull-mode and v3 push-mode) via mTLS **without requiring any modification to Keylime components**. It acts as a read-through cache and analytics aggregator, presenting a unified REST + WebSocket API to the frontend SPA.
